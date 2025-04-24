@@ -1,0 +1,65 @@
+# docker-compose.yml (CON HEALTHCHECK)
+
+services:
+  # --- Servicio de Base de Datos (Añadir Healthcheck) ---
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: arepasaurio-db
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432" # O "5432:5432" si está libre
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - arepasaurio-net
+    # ===> AÑADE ESTE BLOQUE <===
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"] # Verifica si la DB está lista
+      interval: 5s    # Revisa cada 5 segundos
+      timeout: 5s     # Espera 5 segundos por respuesta
+      retries: 5      # Intenta 5 veces antes de marcar como 'unhealthy'
+
+  # --- Servicio del Backend (Modificar depends_on) ---
+  backend:
+    build: ./backend
+    container_name: arepasaurio-backend
+    restart: always
+    # ===> MODIFICA depends_on ASÍ <===
+    depends_on:
+      postgres_db:
+        condition: service_healthy # Espera a que el healthcheck de postgres_db pase
+    environment:
+      DB_HOST: postgres_db
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: postgres
+      DB_PORT: 5432
+    ports:
+      - "5000:3000"
+    networks:
+      - arepasaurio-net
+    # Recuerda quitar la línea 'command: ["tail", ...]' si la tenías
+
+  # --- Servicio del Frontend (Sin cambios aquí) ---
+  frontend:
+    image: arepasaurio-front
+    container_name: arepasaurio-frontend
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - arepasaurio-net
+
+# --- Definición de Red y Volumen (Sin cambios aquí) ---
+networks:
+  arepasaurio-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

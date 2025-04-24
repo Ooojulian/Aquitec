@@ -1,0 +1,24 @@
+# Git
+.git
+.gitignore
+
+# Dependencias
+node_modules
+
+# Archivos de build (Vite los pone en 'dist')
+dist
+build
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de entorno local (si los usas)
+.env
+.env.*
+!.env.example
+
+# Archivos del OS
+.DS_Store
+Thumbs.db
