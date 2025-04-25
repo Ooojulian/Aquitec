@@ -1,18 +1,18 @@
-// index.js
-// Archivo principal de la aplicación que configura el servidor Express y registra las rutas de la API.
+// backend/index.js (CORREGIDO)
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const port = 5000;
+const port = 3000; // <-- VOLVER A 3000 (Puerto INTERNO del contenedor)
 
 // Importar las rutas de la API
-const productoRoutes = require('./routes/Productos');       // Rutas para productos (antes "arepas")
-const ingredienteRoutes = require('./routes/ingredientes');   // Rutas para ingredientes
-const bebidaRoutes = require('./routes/bebidas');             // Rutas para bebidas
-const ventasRoutes = require('./routes/ventas');              // Rutas para ventas y detalles de ventas
-const empleadosRouter = require('./routes/empleados');        // Rutas para empleados
-const loginRoutes = require('./routes/login');                 // Rutas de autenticación (login)
+const productoRoutes = require('./routes/Productos');
+const ingredienteRoutes = require('./routes/ingredientes');
+const bebidaRoutes = require('./routes/bebidas');
+const ventasRoutes = require('./routes/ventas');
+const empleadosRouter = require('./routes/empleados');
+const loginRoutes = require('./routes/login');
 const dashboardRoutes = require('./routes/dashboard');
 const reportesRoutes = require('./routes/reportes');
 
@@ -35,13 +35,15 @@ app.use('/api/empleados', empleadosRouter);
 app.use('/api/login', loginRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reportes', reportesRoutes);
+
 // Middleware global para manejo de errores
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Ha ocurrido un error en el servidor' });
 });
 
-// Iniciar el servidor y escuchar en el puerto configurado
-app.listen(port, () => {
-  console.log(`Servidor escuchando en http://localhost:${port}`);
+// Iniciar el servidor y escuchar en el puerto 3000 en TODAS las interfaces ('0.0.0.0')
+app.listen(port, '0.0.0.0', () => { // <-- AÑADIR '0.0.0.0' AQUÍ
+  // Mensaje de log corregido para claridad
+  console.log(`Servidor escuchando en el puerto ${port} en todas las interfaces (accesible vía host:5000)`);
 });
