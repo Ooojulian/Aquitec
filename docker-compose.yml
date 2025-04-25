@@ -1,65 +1,68 @@
-# docker-compose.yml (CON HEALTHCHECK)
+# Arquitec/docker-compose.yml (CORREGIDO Y COMPLETO)
 
 services:
-  # --- Servicio de Base de Datos (Añadir Healthcheck) ---
+  # --- Servicio de Base de Datos ---
   postgres_db:
-    image: postgres:15-alpine
-    container_name: arepasaurio-db
-    restart: always
+    image: postgres:15-alpine          # Imagen oficial de PostgreSQL (versión ligera)
+    container_name: arepasaurio-db     # Nombre fácil de identificar para el contenedor
+    restart: always                    # Reinicia el contenedor si falla
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres            # Nombre de la base de datos a crear/usar
+      POSTGRES_USER: postgres          # Usuario de la base de datos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Lee la contraseña del archivo .env
     ports:
-      - "5433:5432" # O "5432:5432" si está libre
+      # Mapea puerto 5433 del host al 5432 del contenedor (ajusta el 5433 si prefieres/puedes usar 5432)
+      - "5433:5432"
     volumes:
+      # Guarda los datos de la DB en un volumen persistente llamado 'postgres_data'
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - arepasaurio-net
-    # ===> AÑADE ESTE BLOQUE <===
+      - arepasaurio-net                 # Conecta a la red personalizada
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"] # Verifica si la DB está lista
-      interval: 5s    # Revisa cada 5 segundos
-      timeout: 5s     # Espera 5 segundos por respuesta
-      retries: 5      # Intenta 5 veces antes de marcar como 'unhealthy'
+      # Verifica si la base de datos está lista para aceptar conexiones
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s                     # Intervalo entre verificaciones
+      timeout: 5s                      # Tiempo de espera para la verificación
+      retries: 5                       # Número de reintentos
 
-  # --- Servicio del Backend (Modificar depends_on) ---
+  # --- Servicio del Backend ---
   backend:
-    build: ./backend
+    build: ./backend                   # Construye la imagen desde la carpeta ./backend
     container_name: arepasaurio-backend
     restart: always
-    # ===> MODIFICA depends_on ASÍ <===
     depends_on:
       postgres_db:
-        condition: service_healthy # Espera a que el healthcheck de postgres_db pase
+        condition: service_healthy      # Espera a que el servicio postgres_db esté 'healthy'
     environment:
-      DB_HOST: postgres_db
+      # Variables para que el backend se conecte a la DB
+      DB_HOST: postgres_db             # Usa el nombre del servicio de la DB como host
       DB_USER: postgres
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_PASSWORD: ${POSTGRES_PASSWORD} # Lee la contraseña del archivo .env
       DB_NAME: postgres
-      DB_PORT: 5432
+      DB_PORT: 5432                     # Puerto interno de la DB
     ports:
+      # Mapea el puerto 5000 del host al 3000 del contenedor (para acceso externo a la API)
       - "5000:3000"
     networks:
       - arepasaurio-net
-    # Recuerda quitar la línea 'command: ["tail", ...]' si la tenías
 
-  # --- Servicio del Frontend (Sin cambios aquí) ---
+  # --- Servicio del Frontend (CORREGIDO) ---
   frontend:
-    image: arepasaurio-front
+    build: ./frontend                  # <-- ¡CORRECCIÓN CLAVE! Construye desde ./frontend
     container_name: arepasaurio-frontend
     restart: always
     ports:
+      # Mapea el puerto 8080 del host al 80 del contenedor (para acceso desde el navegador)
       - "8080:80"
     depends_on:
-      - backend
+      - backend                        # Depende del backend (no necesita healthcheck)
     networks:
       - arepasaurio-net
 
-# --- Definición de Red y Volumen (Sin cambios aquí) ---
+# --- Definición de Red y Volumen ---
 networks:
-  arepasaurio-net:
-    driver: bridge
+  arepasaurio-net:                     # Define la red personalizada
+    driver: bridge                     # Usa el driver bridge por defecto
 
 volumes:
-  postgres_data:
+  postgres_data:                       # Define el volumen nombrado para la DB
